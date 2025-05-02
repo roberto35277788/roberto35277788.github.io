@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de Controlador de Carga Solar</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+            padding: 1rem;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 1.5rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 2rem auto;
+        }
+        h1, h2, h3, h4 { /* Añadido h4 */
+            color: #0056b3; /* Azul oscuro */
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        h2 {
+            margin-top: 1.5rem;
+            color: #007bff; /* Azul más brillante */
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        h3 {
+            font-size: 1.1rem;
+            color: #0056b3;
+            margin-top: 1.5rem;
+        }
+        h4 { /* Estilo para subtítulos de detalles */
+             font-size: 1rem;
+             color: #007bff;
+             margin-bottom: 0.5rem;
+             text-align: left; /* Alinear a la izquierda */
+             border-bottom: 1px dashed #ccc;
+             padding-bottom: 0.25rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+            color: #555;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 0.6rem;
+            margin-bottom: 0.8rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            box-sizing: border-box; /* Asegura padding no aumente tamaño */
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        button {
+            display: block; /* Cambiado a block */
+            width: 100%; /* Ocupar ancho completo */
+            padding: 0.8rem;
+            background-color: #28a745; /* Verde por defecto */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: 1rem;
+        }
+         /* Botón Buscar */
+         #calculate-btn { background-color: #007bff; } /* Azul */
+         #calculate-btn:hover { background-color: #0056b3; }
+
+         /* Botón Confirmar */
+         #confirm-selection-btn { background-color: #ffc107; color: #212529; } /* Amarillo */
+         #confirm-selection-btn:hover:not(:disabled) { background-color: #e0a800; }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        /* Grid para inputs */
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem; /* Reducido */
+        }
+        /* Área de especificaciones del panel */
+        .panel-specs {
+            background-color: #e9ecef;
+            padding: 0.8rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            border: 1px solid #ced4da;
+        }
+        .spec-item { display: flex; justify-content: space-between; margin-bottom: 0.2rem; }
+        .spec-item span:first-child { color: #495057; }
+        .spec-item span:last-child { font-weight: 600; }
+
+        /* Estilo para mostrar potencia total */
+        .total-power-display {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+         /* Ocultar display de corriente total general */
+        .total-current-display { display: none; }
+
+
+        /* Tabla de resultados */
+        #results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        #results-table th, #results-table td {
+            border: 1px solid #ddd;
+            padding: 0.6rem;
+            text-align: left;
+            font-size: 0.9rem;
+            vertical-align: middle; /* Alinear verticalmente */
+        }
+        #results-table th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        #results-table tr:nth-child(even) {
+            background-color: #f8f9fa; /* Gris más claro */
+        }
+        /* Estilo para fila seleccionada */
+        #results-table tr.selected-row {
+            background-color: #cce5ff; /* Azul claro */
+            font-weight: bold;
+        }
+        #results-table input[type="radio"] {
+            width: auto; /* Ancho automático para radio */
+            margin-right: 0.5rem;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        #results-output p {
+            margin-top: 1rem;
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+        /* Sección de controlador seleccionado y arreglo */
+        #selection-details-container { /* NUEVO Contenedor */
+            display: grid;
+            grid-template-columns: 1fr; /* Una columna por defecto */
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+         @media (min-width: 768px) { /* md: */
+             #selection-details-container {
+                 grid-template-columns: repeat(2, 1fr); /* Dos columnas */
+             }
+         }
+
+        #selected-controller-details, #final-array-summary { /* Aplicar a ambas secciones */
+            padding: 1rem;
+            background-color: #e2f0ff;
+            border: 1px solid #b8daff;
+            border-radius: 4px;
+        }
+        .detail-item { display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.9rem;}
+        .detail-item span:first-child { color: #0056b3; font-weight: 600; }
+        .detail-item span:last-child { font-weight: normal; color: #333; }
+        /* Estilo específico para AWG recomendado */
+        #final-array-awg {
+             color: #155724; /* Verde oscuro */
+             font-weight: bold;
+             font-size: 1rem; /* Ligeramente más grande */
+        }
+
+        .error-message {
+            color: #dc3545; /* Rojo */
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .hidden { display: none; }
+        /* Estilo para info adicional en tabla */
+        .info-cell {
+            font-size: 0.8rem;
+            color: #6c757d;
+            font-style: italic;
+        }
+        .info-cell strong { /* Para resaltar el número ajustado o advertencias */
+             color: #dc3545;
+             font-weight: bold;
+        }
+        /* Estilo para incompatibilidad */
+        .incompatible-reason {
+             color: #dc3545; /* Rojo */
+             font-weight: bold;
+             display: block; /* En línea separada */
+             margin-top: 0.25rem;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Selector de Controlador de Carga Solar</h1>
+
+        <div class="section inputs">
+            <h2>1. Define tu Sistema</h2>
+            <div class="input-grid">
+                <div>
+                    <label for="panel-select">Modelo de Panel Solar:</label>
+                    <select id="panel-select">
+                        <option value="">-- Selecciona Panel --</option>
+                        </select>
+                    <div id="panel-specs" class="panel-specs hidden">
+                        <h4>Especificaciones del Panel:</h4>
+                        <div class="spec-item"><span>Potencia (Wp):</span><span id="spec-wp">--</span></div>
+                        <div class="spec-item"><span>V. Máx. Potencia (Vmp):</span><span id="spec-vmp">--</span> V</div>
+                        <div class="spec-item"><span>I. Máx. Potencia (Imp):</span><span id="spec-imp">--</span> A</div>
+                        <div class="spec-item"><span>V. Circuito Abierto (Voc):</span><span id="spec-voc">--</span> V</div>
+                        <div class="spec-item"><span>I. Corto Circuito (Isc):</span><span id="spec-isc">--</span> A</div>
+                        <div class="spec-item"><span>V. Nominal Sistema:</span><span id="spec-nominal-v">--</span> V</div>
+                    </div>
+                </div>
+                <div>
+                    <label for="num-panels">Número Total de Paneles:</label>
+                    <input type="number" id="num-panels" min="1" placeholder="Ej: 4">
+                </div>
+                <div>
+                    <label for="system-voltage">Voltaje del Sistema (Baterías):</label>
+                    <select id="system-voltage">
+                        <option value="">-- Selecciona Voltaje --</option>
+                        <option value="12">12 V</option>
+                        <option value="24">24 V</option>
+                        <option value="48">48 V</option>
+                    </select>
+                </div>
+            </div>
+            <div id="total-power-display" class="summary-item total-power-display hidden">
+                Potencia Total: <span id="total-power-value">--</span> Wp
+            </div>
+            <button id="calculate-btn">Buscar Controladores Compatibles</button>
+            <div id="error-message" class="error-message hidden"></div>
+        </div>
+
+        <div class="section results hidden" id="results-section">
+            <h2>2. Controladores Compatibles</h2>
+            <div id="results-output">
+                <p id="no-results-msg" class="hidden">No se encontraron controladores compatibles con estos parámetros.</p>
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Sel.</th>
+                            <th>Corriente (A)</th>
+                            <th>Tipo</th>
+                            <th>Potencia Máx. (<span id="power-col-voltage"></span>V)</th>
+                            <th>Voltaje Máx. Entrada (V)</th>
+                            <th>Configuración / Info</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody">
+                        </tbody>
+                </table>
+                 <button id="confirm-selection-btn" class="hidden" disabled>Mostrar Detalles y Arreglo Final</button>
+            </div>
+            <div id="selection-details-container" class="hidden">
+                <div id="selected-controller-details">
+                    <h4>Controlador Seleccionado</h4>
+                    <div class="detail-item"><span>Corriente Nominal:</span><span id="selected-current">--</span> A</div>
+                    <div class="detail-item"><span>Tipo:</span><span id="selected-type">--</span></div>
+                    <div class="detail-item"><span>Potencia Máx. (12V):</span><span id="selected-power-12">--</span> W</div>
+                    <div class="detail-item"><span>Potencia Máx. (24V):</span><span id="selected-power-24">--</span> W</div>
+                    <div class="detail-item"><span>Potencia Máx. (48V):</span><span id="selected-power-48">--</span> W</div>
+                    <div class="detail-item"><span>Voltaje Máx. Entrada (Voc):</span><span id="selected-max-voc">--</span> V</div>
+                </div>
+                 <div id="final-array-summary">
+                     <h4>Arreglo de Paneles Final</h4>
+                     <div class="detail-item"><span>Configuración:</span><span id="final-config">--</span></div>
+                     <div class="detail-item"><span>Paneles Totales (Ajustado):</span><span id="final-total-panels">--</span></div>
+                     <div class="detail-item"><span>Voltaje Arreglo (Voc):</span><span id="final-array-voc">--</span> V</div>
+                     <div class="detail-item"><span>Corriente Arreglo (Isc):</span><span id="final-array-isc">--</span> A</div>
+                     <div class="detail-item"><span>Potencia Total Arreglo:</span><span id="final-array-power">--</span> Wp</div>
+                     <div class="detail-item" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #b8daff;">
+                         <span>Calibre Cable Recomendado:</span>
+                         <span id="final-array-awg">--</span>
+                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Datos de los Paneles ---
+        const panelData = {
+            'poli_10': { name: "Policristalino 10W", wattage: 10, voc: 22, isc: 0.58, vmp: 18.36, imp: 0.54, nominalVoltage: 12 },
+            'poli_50': { name: "Policristalino 50W", wattage: 50, voc: 22.5, isc: 2.98, vmp: 18.2, imp: 2.75, nominalVoltage: 12 },
+            'poli_60': { name: "Policristalino 60W", wattage: 60, voc: 20.3, isc: 3.37, vmp: 19.25, imp: 3.12, nominalVoltage: 12 },
+            'poli_80': { name: "Policristalino 80W", wattage: 80, voc: 21.96, isc: 4.73, vmp: 18.3, imp: 4.38, nominalVoltage: 12 },
+            'poli_100': { name: "Policristalino 100W", wattage: 100, voc: 22.1, isc: 6.02, vmp: 17.9, imp: 5.59, nominalVoltage: 12 },
+            'poli_150': { name: "Policristalino 150W", wattage: 150, voc: 22.51, isc: 8.75, vmp: 18.4, imp: 8.15, nominalVoltage: 12 },
+            'poli_160': { name: "Policristalino 160W", wattage: 160, voc: 23.21, isc: 8.98, vmp: 18.6, imp: 8.6, nominalVoltage: 12 },
+            'poli_170': { name: "Policristalino 170W", wattage: 170, voc: 23.26, isc: 9.18, vmp: 19.32, imp: 8.8, nominalVoltage: 12 },
+            'mono_210': { name: "Monocristalino 210W", wattage: 210, voc: 23.95, isc: 11.07, vmp: 20.05, imp: 10.47, nominalVoltage: 12 },
+            'mono_220': { name: "Monocristalino 220W", wattage: 220, voc: 24.03, isc: 11.53, vmp: 20.12, imp: 10.93, nominalVoltage: 12 },
+            'mono_230': { name: "Monocristalino 230W", wattage: 230, voc: 24.1, isc: 11.99, vmp: 20.19, imp: 11.39, nominalVoltage: 12 },
+            'mono_340': { name: "Monocristalino 340W", wattage: 340, voc: 41.55, isc: 10.46, vmp: 34.73, imp: 9.79, nominalVoltage: 24 },
+            'mono_380': { name: "Monocristalino 380W", wattage: 380, voc: 48.71, isc: 10.05, vmp: 40.03, imp: 9.56, nominalVoltage: 24 },
+            'mono_450': { name: "Monocristalino 450W", wattage: 450, voc: 50, isc: 11.44, vmp: 41.4, imp: 10.87, nominalVoltage: 24 }
+        };
+
+        // --- Datos de los Controladores ---
+        const controllerData = [
+            { id: 'pwm_5_55', current: 5, type: 'PWM', power: { 12: 60, 24: 120 }, maxVoc: 55 },
+            { id: 'pwm_10_50', current: 10, type: 'PWM', power: { 12: 350, 24: 700 }, maxVoc: 50 },
+            { id: 'pwm_10_55', current: 10, type: 'PWM', power: { 12: 120, 24: 240 }, maxVoc: 55 },
+            { id: 'pwm_20_50', current: 20, type: 'PWM', power: { 12: 500, 24: 1000 }, maxVoc: 50 },
+            { id: 'pwm_20_55', current: 20, type: 'PWM', power: { 12: 240, 24: 480 }, maxVoc: 55 },
+            { id: 'pwm_30_50', current: 30, type: 'PWM', power: { 12: 500, 24: 1000 }, maxVoc: 50 },
+            { id: 'pwm_30_55', current: 30, type: 'PWM', power: { 12: 360, 24: 720 }, maxVoc: 55 },
+            { id: 'pwm_40_50', current: 40, type: 'PWM', power: { 12: 520, 24: 1040 }, maxVoc: 50 },
+            { id: 'pwm_50_50', current: 50, type: 'PWM', power: { 12: 650, 24: 1300 }, maxVoc: 50 },
+            { id: 'pwm_60_50', current: 60, type: 'PWM', power: { 12: 1100, 24: 2200 }, maxVoc: 50 },
+            { id: 'mppt_10_75', current: 10, type: 'MPPT', power: { 12: 145, 24: 290 }, maxVoc: 75 },
+            { id: 'mppt_15_75', current: 15, type: 'MPPT', power: { 12: 220, 24: 440 }, maxVoc: 75 },
+            { id: 'mppt_15_100', current: 15, type: 'MPPT', power: { 12: 220, 24: 440 }, maxVoc: 100 },
+            { id: 'mppt_20_100a', current: 20, type: 'MPPT', power: { 12: 290, 24: 580 }, maxVoc: 100 },
+            { id: 'mppt_20_100b', current: 20, type: 'MPPT', power: { 12: 300, 24: 600 }, maxVoc: 100 },
+            { id: 'mppt_30_100', current: 30, type: 'MPPT', power: { 12: 440, 24: 880 }, maxVoc: 100 },
+            { id: 'mppt_30_145', current: 30, type: 'MPPT', power: { 12: 450, 24: 900 }, maxVoc: 145 },
+            { id: 'mppt_50_100', current: 50, type: 'MPPT', power: { 12: 700, 24: 1400 }, maxVoc: 100 },
+            { id: 'mppt_60_150', current: 60, type: 'MPPT', power: { 12: 800, 24: 1600, 48: 3200 }, maxVoc: 150 },
+            { id: 'mppt_80_150', current: 80, type: 'MPPT', power: { 12: 1250, 24: 2500, 48: 5000 }, maxVoc: 150 }
+        ];
+
+         // **NUEVO: Datos de Calibres AWG**
+         const awgData = [
+             { gauge: "14", maxCurrent: 23 },
+             { gauge: "12", maxCurrent: 30 },
+             { gauge: "10", maxCurrent: 41 },
+             { gauge: "8", maxCurrent: 55 },
+             { gauge: "6", maxCurrent: 73 },
+             { gauge: "4", maxCurrent: 96 },
+             { gauge: "2", maxCurrent: 129 },
+             { gauge: "1/0", maxCurrent: 172 },
+             { gauge: "2/0", maxCurrent: 194 },
+             { gauge: "4/0", maxCurrent: 260 },
+             { gauge: "250", maxCurrent: 290 },
+             { gauge: "500", maxCurrent: 430 }
+         ];
+
+
+        // --- DOM References ---
+        const panelSelectEl = document.getElementById('panel-select');
+        const panelSpecsDiv = document.getElementById('panel-specs');
+        const specWp = document.getElementById('spec-wp');
+        const specVmp = document.getElementById('spec-vmp');
+        const specImp = document.getElementById('spec-imp');
+        const specVoc = document.getElementById('spec-voc');
+        const specIsc = document.getElementById('spec-isc');
+        const specNominalV = document.getElementById('spec-nominal-v');
+        const numPanelsInput = document.getElementById('num-panels');
+        const systemVoltageSelect = document.getElementById('system-voltage');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const errorMessageDiv = document.getElementById('error-message');
+        const resultsSection = document.getElementById('results-section');
+        const resultsTbody = document.getElementById('results-tbody');
+        const noResultsMsg = document.getElementById('no-results-msg');
+        const powerColVoltageSpan = document.getElementById('power-col-voltage');
+        const totalPowerDisplayDiv = document.getElementById('total-power-display');
+        const totalPowerValueSpan = document.getElementById('total-power-value');
+        // const totalCurrentDisplayDiv = document.getElementById('total-current-display'); // Eliminado
+        // const totalCurrentValueSpan = document.getElementById('total-current-value'); // Eliminado
+        const confirmSelectionBtn = document.getElementById('confirm-selection-btn');
+        const selectionDetailsContainer = document.getElementById('selection-details-container');
+        const selectedControllerDetailsDiv = document.getElementById('selected-controller-details');
+        const selectedCurrentSpan = document.getElementById('selected-current');
+        const selectedTypeSpan = document.getElementById('selected-type');
+        const selectedPower12Span = document.getElementById('selected-power-12');
+        const selectedPower24Span = document.getElementById('selected-power-24');
+        const selectedPower48Span = document.getElementById('selected-power-48');
+        const selectedMaxVocSpan = document.getElementById('selected-max-voc');
+        // Referencias para el resumen del arreglo final
+        const finalArraySummaryDiv = document.getElementById('final-array-summary');
+        const finalConfigSpan = document.getElementById('final-config');
+        const finalTotalPanelsSpan = document.getElementById('final-total-panels');
+        const finalArrayVocSpan = document.getElementById('final-array-voc');
+        const finalArrayIscSpan = document.getElementById('final-array-isc');
+        const finalArrayPowerSpan = document.getElementById('final-array-power');
+        const finalArrayAwgSpan = document.getElementById('final-array-awg');
+
+
+        // --- Variables Globales ---
+        let currentCompatibleControllers = [];
+        let selectedControllerIndex = -1;
+
+        // --- Populate Panel Select ---
+        for (const key in panelData) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = panelData[key].name;
+            panelSelectEl.appendChild(option);
+        }
+
+        // --- Event Listeners ---
+        panelSelectEl.addEventListener('change', function() {
+            const selectedKey = this.value;
+            const selectedPanel = panelData[selectedKey];
+            if (selectedPanel) {
+                specWp.textContent = selectedPanel.wattage + ' Wp';
+                specVmp.textContent = selectedPanel.vmp + ' V';
+                specImp.textContent = selectedPanel.imp + ' A';
+                specVoc.textContent = selectedPanel.voc + ' V';
+                specIsc.textContent = selectedPanel.isc + ' A';
+                specNominalV.textContent = selectedPanel.nominalVoltage + ' V';
+                panelSpecsDiv.classList.remove('hidden');
+            } else {
+                panelSpecsDiv.classList.add('hidden');
+            }
+            clearResultsAndSelection();
+        });
+
+         numPanelsInput.addEventListener('input', clearResultsAndSelection);
+         systemVoltageSelect.addEventListener('change', clearResultsAndSelection);
+
+
+        calculateBtn.addEventListener('click', function() {
+            hideError();
+            resultsTbody.innerHTML = '';
+            noResultsMsg.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+            totalPowerDisplayDiv.classList.add('hidden');
+            selectionDetailsContainer.classList.add('hidden');
+            confirmSelectionBtn.classList.add('hidden');
+            confirmSelectionBtn.disabled = true;
+            selectedControllerIndex = -1;
+
+            // --- Get Inputs ---
+            const selectedPanelKey = panelSelectEl.value;
+            const numPanels = parseInt(numPanelsInput.value);
+            const systemVoltage = parseInt(systemVoltageSelect.value);
+            const selectedPanel = panelData[selectedPanelKey];
+
+            // --- Validate Inputs ---
+            let errorMsg = "";
+            if (!selectedPanel) { errorMsg = "Selecciona un modelo de panel."; }
+            else if (isNaN(numPanels) || numPanels <= 0) { errorMsg = "Ingresa un número válido de paneles."; }
+            else if (!systemVoltage) { errorMsg = "Selecciona el voltaje del sistema."; }
+
+            if (errorMsg) { showError(errorMsg); return; }
+
+            // --- Calculations ---
+            const totalSystemPowerOriginal = selectedPanel.wattage * numPanels;
+            totalPowerValueSpan.textContent = totalSystemPowerOriginal;
+            totalPowerDisplayDiv.classList.remove('hidden');
+
+            // --- Filter Controllers ---
+            currentCompatibleControllers = [];
+
+            controllerData.forEach(controller => {
+                let isCompatible = true;
+                let configString = "N/A";
+                let adjustmentNeeded = false;
+                let adjustedNumPanels = numPanels;
+                let infoText = '';
+                let numPanelsSeries = 1;
+                let numParallelStrings = numPanels;
+                let stringVoc = selectedPanel.voc;
+                let totalIsc = selectedPanel.isc * numPanels;
+
+                // 1. Determinar configuración y ajustar paneles si es necesario
+                if (controller.type === 'PWM') {
+                    if (!selectedPanel.nominalVoltage) {
+                        isCompatible = false; infoText += 'V. Nom panel?. ';
+                    } else {
+                        const requiredSeries = systemVoltage / selectedPanel.nominalVoltage;
+                        if (!Number.isInteger(requiredSeries) || requiredSeries <= 0) {
+                            isCompatible = false; infoText += `PWM V. Incomp. `;
+                        } else {
+                            numPanelsSeries = requiredSeries;
+                            if (numPanels % requiredSeries !== 0) {
+                                adjustmentNeeded = true;
+                                adjustedNumPanels = Math.ceil(numPanels / requiredSeries) * requiredSeries;
+                                infoText += `PWM Req. <strong>${adjustedNumPanels}</strong> paneles. `;
+                            } else {
+                                adjustedNumPanels = numPanels;
+                            }
+                             numParallelStrings = adjustedNumPanels / numPanelsSeries;
+                        }
+                    }
+                } else { // MPPT
+                     if (selectedPanel.voc > 0 && controller.maxVoc > 0) {
+                         numPanelsSeries = Math.floor(controller.maxVoc / selectedPanel.voc);
+                     }
+                     numPanelsSeries = Math.max(1, numPanelsSeries);
+                     // Usar numPanels original para el cálculo inicial de paralelo
+                     numParallelStrings = Math.ceil(numPanels / numPanelsSeries);
+                     // Ajustar numPanels si es necesario para tener strings completos
+                     if (numPanels % numPanelsSeries !== 0) {
+                        adjustmentNeeded = true;
+                        adjustedNumPanels = numParallelStrings * numPanelsSeries;
+                        infoText += `MPPT Req. <strong>${adjustedNumPanels}</strong> paneles. `;
+                     } else {
+                        adjustedNumPanels = numPanels; // No necesita ajuste
+                        numParallelStrings = adjustedNumPanels / numPanelsSeries;
+                     }
+                }
+
+                if (!isCompatible) return;
+
+                // Calcular Voc y Isc para la configuración final
+                stringVoc = selectedPanel.voc * numPanelsSeries;
+                totalIsc = selectedPanel.isc * numParallelStrings; // **Isc Total Correcto**
+                configString = `${numPanelsSeries}S / ${numParallelStrings}P`;
+
+                // --- Validaciones de Compatibilidad ---
+                let incompatibilityReason = '';
+
+                // 2. Check Input Current (Isc)
+                const currentLimit = controller.current;
+                if (totalIsc > currentLimit) {
+                    isCompatible = false;
+                    incompatibilityReason = `<strong>Incompatible: Isc Total (${totalIsc.toFixed(1)}A) > Nominal (${controller.current}A).</strong>`;
+                }
+
+                // 3. Check Max Input Voltage (Voc)
+                if (isCompatible && controller.maxVoc < stringVoc) {
+                     isCompatible = false;
+                     incompatibilityReason = `Voc (${stringVoc.toFixed(1)}V) > Máx (${controller.maxVoc}V).`;
+                 }
+
+                // 4. Check Max Power for System Voltage
+                if (isCompatible) {
+                    const controllerMaxPower = controller.power[systemVoltage];
+                    const powerToCheck = selectedPanel.wattage * adjustedNumPanels; // Usar potencia ajustada
+
+                     if (controllerMaxPower === undefined || controllerMaxPower === null) {
+                         if (systemVoltage === 48 && (controller.power[24] !== undefined || controller.power[12] !== undefined)) { isCompatible = false; incompatibilityReason = `No soporta ${systemVoltage}V.`; }
+                         if (systemVoltage !== 48) { isCompatible = false; incompatibilityReason = `No soporta ${systemVoltage}V.`; }
+                     }
+                    if (isCompatible && controllerMaxPower !== undefined && controllerMaxPower !== null && powerToCheck > controllerMaxPower) {
+                        isCompatible = false;
+                        incompatibilityReason = `P. Sist (${powerToCheck}W) > Máx (${controllerMaxPower}W).`;
+                    }
+                }
+
+                // Construir texto de información final
+                 if (!isCompatible) {
+                     infoText = incompatibilityReason ? incompatibilityReason + ' ' + infoText : infoText;
+                 } else {
+                     const estimatedOutputCurrent = totalSystemPowerOriginal / systemVoltage;
+                     if (controller.type === 'MPPT' && estimatedOutputCurrent > controller.current) {
+                          infoText += `<i>Nota:</i> Salida (${estimatedOutputCurrent.toFixed(1)}A) > Nominal (${controller.current}A). `;
+                     }
+                     const powerDisplayCheck = controller.power[systemVoltage];
+                     if (powerDisplayCheck === undefined || powerDisplayCheck === null) {
+                         infoText += `<i>*Potencia ${systemVoltage}V N/A.</i> `;
+                     }
+                 }
+
+
+                // Añadir a la lista SOLO si es compatible
+                if (isCompatible) {
+                    currentCompatibleControllers.push({
+                        ...controller,
+                        config: configString,
+                        currentInfo: infoText.trim() || '-',
+                        adjustedPanels: adjustedNumPanels,
+                        calculatedIsc: totalIsc,
+                        calculatedVoc: stringVoc,
+                        finalPower: selectedPanel.wattage * adjustedNumPanels,
+                        numSeries: numPanelsSeries,
+                        numParallel: numParallelStrings
+                     });
+                } else {
+                     console.log(`Controlador ${controller.id} INCOMPATIBLE. Razón: ${incompatibilityReason || infoText}`);
+                 }
+            });
+
+
+            // --- Display Results ---
+            powerColVoltageSpan.textContent = systemVoltage;
+
+            if (currentCompatibleControllers.length > 0) {
+                currentCompatibleControllers.forEach((controller, index) => {
+                    const row = resultsTbody.insertRow();
+
+                    const selectCell = row.insertCell();
+                    const radioInput = document.createElement('input');
+                    radioInput.type = 'radio';
+                    radioInput.name = 'selected_controller';
+                    radioInput.value = index;
+                    radioInput.addEventListener('change', handleControllerSelection);
+                    selectCell.appendChild(radioInput);
+
+                    row.insertCell().textContent = controller.current;
+                    row.insertCell().textContent = controller.type;
+                    const powerDisplay = controller.power[systemVoltage] !== undefined ? controller.power[systemVoltage] + ' W' : 'N/A*';
+                    row.insertCell().textContent = powerDisplay;
+                    row.insertCell().textContent = controller.maxVoc;
+
+                    const infoCell = row.insertCell();
+                    infoCell.classList.add('info-cell');
+                    let cellHTML = `<strong>${controller.config}</strong> (Isc: ${controller.calculatedIsc.toFixed(1)}A)`;
+                    if (controller.adjustedPanels !== numPanels) {
+                         cellHTML += `<br>(Req. <strong>${controller.adjustedPanels}</strong> paneles)`;
+                    }
+                    if (controller.currentInfo && controller.currentInfo !== '-') {
+                         let formattedInfo = controller.currentInfo.replace(/PWM Req\. <strong>\d+<\/strong> paneles\./, '');
+                         formattedInfo = formattedInfo.replace(/MPPT Req\. <strong>\d+<\/strong> paneles\./, '');
+                         formattedInfo = formattedInfo.replace(/Adv:/g, '<strong>Adv:</strong>');
+                         formattedInfo = formattedInfo.replace(/Nota:/g, '<i>Nota:</i>');
+                         formattedInfo = formattedInfo.replace(/Incompatible: Isc Total \([^)]+\) > Nominal \([^)]+\)\./g, '<span class="incompatible-reason">$&</span>');
+                         if (formattedInfo.trim()) {
+                            cellHTML += `<br>${formattedInfo.trim()}`;
+                         }
+                    }
+                    infoCell.innerHTML = cellHTML;
+
+                });
+                resultsSection.classList.remove('hidden');
+            } else {
+                noResultsMsg.classList.remove('hidden');
+                resultsSection.classList.remove('hidden');
+            }
+        });
+
+        // --- Función para manejar selección de controlador ---
+        function handleControllerSelection(event) {
+            selectedControllerIndex = parseInt(event.target.value);
+
+            const rows = resultsTbody.querySelectorAll('tr');
+            rows.forEach(row => row.classList.remove('selected-row'));
+            event.target.closest('tr').classList.add('selected-row');
+
+            confirmSelectionBtn.disabled = false;
+            confirmSelectionBtn.classList.remove('hidden');
+
+            selectionDetailsContainer.classList.add('hidden'); // Ocultar detalles hasta confirmar
+        }
+
+        // --- Listener para el botón de confirmar selección ---
+        confirmSelectionBtn.addEventListener('click', function() {
+            if (selectedControllerIndex >= 0 && selectedControllerIndex < currentCompatibleControllers.length) {
+                const selectedController = currentCompatibleControllers[selectedControllerIndex];
+
+                // Mostrar detalles del controlador
+                selectedCurrentSpan.textContent = selectedController.current;
+                selectedTypeSpan.textContent = selectedController.type;
+                selectedPower12Span.textContent = selectedController.power[12] !== undefined ? selectedController.power[12] + ' W' : 'N/A';
+                selectedPower24Span.textContent = selectedController.power[24] !== undefined ? selectedController.power[24] + ' W' : 'N/A';
+                selectedPower48Span.textContent = selectedController.power[48] !== undefined ? selectedController.power[48] + ' W' : 'N/A';
+                selectedMaxVocSpan.textContent = selectedController.maxVoc;
+
+                // Mostrar resumen del arreglo final
+                finalConfigSpan.textContent = selectedController.config;
+                finalTotalPanelsSpan.textContent = selectedController.adjustedPanels;
+                finalArrayVocSpan.textContent = selectedController.calculatedVoc.toFixed(1);
+                finalArrayIscSpan.textContent = selectedController.calculatedIsc.toFixed(2);
+                finalArrayPowerSpan.textContent = selectedController.finalPower;
+
+                // Calcular y mostrar AWG
+                const recommendedAWG = recommendAWG(selectedController.calculatedIsc);
+                finalArrayAwgSpan.textContent = recommendedAWG;
+
+                selectionDetailsContainer.classList.remove('hidden');
+            } else {
+                alert("Por favor, selecciona un controlador de la lista primero.");
+                 selectionDetailsContainer.classList.add('hidden');
+            }
+        });
+
+        // **NUEVO: Función para recomendar AWG**
+        function recommendAWG(current) {
+            // Añadir un factor de seguridad (ej. 25%) a la corriente calculada
+             const safeCurrent = current * 1.25;
+
+             for (const awg of awgData) {
+                 if (awg.maxCurrent >= safeCurrent) {
+                     // **CAMBIO: Mostrar solo el calibre recomendado**
+                     return `AWG ${awg.gauge}`;
+                 }
+             }
+             return "Corriente muy alta (Verificar tabla extendida)"; // Si supera la tabla
+        }
+
+
+        // --- Helper Functions ---
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+        }
+        function hideError() {
+            errorMessageDiv.classList.add('hidden');
+        }
+        function clearResultsAndSelection() {
+             resultsSection.classList.add('hidden');
+             totalPowerDisplayDiv.classList.add('hidden');
+             // totalCurrentDisplayDiv.classList.add('hidden'); // Eliminado
+             selectionDetailsContainer.classList.add('hidden'); // Ocultar contenedor de detalles
+             confirmSelectionBtn.classList.add('hidden');
+             confirmSelectionBtn.disabled = true;
+             hideError();
+             const radios = resultsTbody.querySelectorAll('input[type="radio"]');
+             radios.forEach(radio => radio.checked = false);
+             const rows = resultsTbody.querySelectorAll('tr');
+             rows.forEach(row => row.classList.remove('selected-row'));
+             selectedControllerIndex = -1;
+        }
+
+        // Initial setup
+        hideError();
+
+    </script>
+
+</body>
+</html>

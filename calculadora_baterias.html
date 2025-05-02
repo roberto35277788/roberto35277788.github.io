@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Banco de Baterías Solares</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f0f4f8; color: #333; line-height: 1.6; padding: 1rem;
+        }
+        .container {
+            background-color: #ffffff; padding: 1.5rem 2rem; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); max-width: 1100px; /* Ancho ajustado */ margin: 2rem auto;
+        }
+        h1, h2, h3 { color: #1a237e; text-align: center; margin-bottom: 1.5rem; }
+        h2 { font-size: 1.25rem; margin-top: 1.5rem; color: #3f51b5; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.5rem; }
+        h3 { font-size: 1.1rem; color: #1a237e; margin-bottom: 0.8rem; padding-bottom: 0.3rem; border-bottom: 1px dashed #adb5bd; text-align: center;}
+        h4 { font-size: 1rem; color: #3f51b5; margin-bottom: 0.5rem; text-align: left; border: none; padding-bottom: 0.25rem;}
+
+        label { display: block; margin-bottom: 0.4rem; font-weight: 600; color: #444; }
+        input[type="number"], select {
+            width: 100%; padding: 0.6rem; margin-bottom: 1rem; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 0.95rem; box-sizing: border-box;
+        }
+        input:focus, select:focus { outline: none; border-color: #3f51b5; box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.25); }
+        button {
+            display: block; width: 100%; padding: 0.8rem; background-color: #3f51b5; color: white;
+            border: none; border-radius: 4px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+            transition: background-color 0.2s ease; margin-top: 1.5rem;
+        }
+        #calculate-btn { background-color: #007bff; }
+        #calculate-btn:hover { background-color: #0056b3; }
+        #compare-selection-btn { background-color: #ffc107; color: #212529; }
+        #compare-selection-btn:hover:not(:disabled) { background-color: #e0a800; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; margin-bottom: 1.5rem; }
+        @media (min-width: 900px) { .input-grid { grid-template-columns: repeat(4, 1fr); } }
+        @media (max-width: 899px) and (min-width: 600px) { .input-grid { grid-template-columns: repeat(2, 1fr); } }
+        .input-hint { margin-top: -0.6rem; margin-bottom: 0.8rem; font-size: 0.75rem; color: #6c757d; }
+        #results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; overflow-x: auto; display: block; }
+        #results-table th, #results-table td { border: 1px solid #ddd; padding: 0.7rem; text-align: left; font-size: 0.85rem; white-space: nowrap; vertical-align: middle; }
+        #results-table th { background-color: #3f51b5; color: white; font-weight: bold; position: sticky; top: 0; z-index: 1; }
+        #results-table tr:nth-child(even) { background-color: #f1f3f5; }
+        #results-table tr:hover { background-color: #e8eaf6; }
+        #results-table tr.selected-row { background-color: #dbe4ff; }
+        #results-table input[type="checkbox"] { width: auto; margin-right: 0.5rem; cursor: pointer; vertical-align: middle; height: 1.1em; width: 1.1em; }
+        #results-output p { margin-top: 1rem; text-align: center; font-style: italic; color: #666; }
+
+        /* Contenedor para resultados de comparación */
+        #comparison-results-container {
+            margin-top: 1.5rem; padding: 1rem; background-color: #e8f5e9;
+            border: 1px solid #c8e6c9; border-radius: 4px;
+        }
+        .comparison-item { border-bottom: 1px dashed #a5d6a7; padding-bottom: 1rem; margin-bottom: 1rem; }
+        .comparison-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .comparison-item h4 { font-size: 1rem; color: #2e7d32; margin-bottom: 0.75rem; text-align: left; border: none; padding-bottom: 0; }
+        .comparison-detail { display: flex; justify-content: space-between; margin-bottom: 0.2rem; font-size: 0.9rem;}
+        .comparison-detail span:first-child { color: #388e3c; font-weight: 500; }
+        .comparison-detail span:last-child { font-weight: 600; color: #1b5e20; }
+        .total-cost-10y { font-size: 1.1rem !important; color: #d32f2f !important; }
+        /* NUEVO: Estilo para la advertencia de precios */
+        .price-disclaimer {
+            font-size: 0.8rem;
+            text-align: center;
+            color: #555;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #c8e6c9;
+        }
+
+        .error-message { color: #dc3545; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 0.75rem; border-radius: 4px; margin-top: 1rem; text-align: center; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Banco de Baterías</h1>
+        <p class="subtitle" style="margin-bottom: 1rem;">Encuentra configuraciones de baterías compatibles para tu sistema.</p>
+
+        <div class="section inputs">
+            <h2>Parámetros Requeridos</h2>
+            <div class="input-grid">
+                <div>
+                    <label for="daily-consumption">Consumo Diario (kWh/día):</label>
+                    <input type="number" id="daily-consumption" min="0.1" step="0.1" placeholder="Ej: 5">
+                    <p class="input-hint">Energía total que necesitas al día.</p>
+                </div>
+                <div>
+                    <label for="autonomy-days">Días de Autonomía:</label>
+                    <input type="number" id="autonomy-days" min="1" step="1" placeholder="Ej: 2">
+                    <p class="input-hint">Días sin recarga que debe cubrir.</p>
+                </div>
+                <div>
+                    <label for="system-voltage">Voltaje del Sistema (V):</label>
+                    <select id="system-voltage">
+                        <option value="">-- Selecciona --</option>
+                        <option value="12">12 V</option>
+                        <option value="24">24 V</option>
+                        <option value="48">48 V</option>
+                    </select>
+                    <p class="input-hint">Voltaje nominal de tu banco.</p>
+                </div>
+                 <div>
+                    <label for="efficiency">Eficiencia Batería (%):</label>
+                    <input type="number" id="efficiency" min="50" max="100" step="1" value="85"> <p class="input-hint">Considera pérdidas (85-95% típico).</p>
+                </div>
+            </div>
+            <button id="calculate-btn">Buscar Configuraciones</button>
+            <div id="error-message" class="error-message hidden"></div>
+        </div>
+
+        <div id="results-section" class="section results hidden">
+            <h2>Configuraciones de Baterías Compatibles</h2>
+            <p class="input-hint" style="text-align:center;">Selecciona hasta 3 opciones para comparar. Se muestran configuraciones con 3 o menos strings en paralelo.</p>
+            <div id="results-output">
+                <p id="no-results-msg" class="hidden">No se encontraron baterías compatibles con estos parámetros y el límite de 3 strings paralelos.</p>
+                <table id="results-table">
+                    <thead>
+                        <tr>
+                            <th>Sel.</th>
+                            <th>Modelo Batería</th>
+                            <th>Voltaje (V)</th>
+                            <th>Capacidad Nominal (Ah)</th>
+                            <th>Tipo</th>
+                            <th>DoD Máx.</th>
+                            <th>Capacidad Neta (Ah)</th>
+                            <th>Ciclos</th>
+                            <th>Precio Prom. (COP)</th>
+                            <th>Baterías en Serie</th>
+                            <th>Strings en Paralelo</th>
+                            <th>Total Baterías</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-tbody">
+                        </tbody>
+                </table>
+                 <div id="usage-profile-selector" class="hidden">
+                     <p>Selecciona el perfil de uso para la comparación a 10 años:</p>
+                     <label>
+                         <input type="radio" name="usage-profile" value="365" checked> Normal (365 ciclos/año)
+                     </label>
+                     <label>
+                         <input type="radio" name="usage-profile" value="180"> Esporádico (180 ciclos/año)
+                     </label>
+                     <label>
+                         <input type="radio" name="usage-profile" value="500"> Intensivo (500 ciclos/año)
+                     </label>
+                 </div>
+                 <button id="compare-selection-btn" class="hidden" disabled>Comparar Seleccionadas (10 años)</button>
+            </div>
+             <div id="comparison-results-container" class="hidden">
+                 <h3>Comparación a 10 Años</h3>
+                  <p class="price-disclaimer">
+                     <strong>Advertencia:</strong> Los precios mostrados son estimaciones generales y pueden variar considerablemente.
+                     Se recomienda realizar una búsqueda detallada de precios con proveedores locales para obtener cotizaciones precisas.
+                 </p>
+             </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Datos de Baterías (con precio estimado en COP) ---
+        const batteryData = [
+            { model: "AGM 8Ah", voltage: 12, ah_nominal: 8, dod_max: 0.5, ciclos: 800, type: "AGM", price: 150000 },
+            { model: "AGM 18Ah", voltage: 12, ah_nominal: 18, dod_max: 0.5, ciclos: 800, type: "AGM", price: 300000 },
+            { model: "GEL 40Ah", voltage: 12, ah_nominal: 40, dod_max: 0.5, ciclos: 1200, type: "GEL", price: 550000 },
+            { model: "GEL 90Ah", voltage: 12, ah_nominal: 90, dod_max: 0.5, ciclos: 1200, type: "GEL", price: 950000 },
+            { model: "AGM 100Ah", voltage: 12, ah_nominal: 100, dod_max: 0.5, ciclos: 800, type: "AGM", price: 850000 },
+            { model: "GEL 100Ah", voltage: 12, ah_nominal: 100, dod_max: 0.5, ciclos: 1200, type: "GEL", price: 1050000 },
+            { model: "GEL 100Ah (2)", voltage: 12, ah_nominal: 100, dod_max: 0.5, ciclos: 1200, type: "GEL", price: 1050000 },
+            { model: "AGM 150Ah", voltage: 12, ah_nominal: 150, dod_max: 0.5, ciclos: 800, type: "AGM", price: 1200000 },
+            { model: "GEL 150Ah", voltage: 12, ah_nominal: 150, dod_max: 0.5, ciclos: 1200, type: "GEL", price: 1450000 },
+            { model: "AGM 150Ah (2)", voltage: 12, ah_nominal: 150, dod_max: 0.5, ciclos: 800, type: "AGM", price: 1200000 },
+            { model: "AGM 250Ah", voltage: 12, ah_nominal: 250, dod_max: 0.5, ciclos: 800, type: "AGM", price: 1900000 },
+            { model: "AGM 300Ah", voltage: 12, ah_nominal: 300, dod_max: 0.5, ciclos: 800, type: "AGM", price: 2200000 },
+            { model: "GEL 316Ah", voltage: 12, ah_nominal: 316, dod_max: 0.5, ciclos: 1200, type: "GEL", price: 2500000 },
+            { model: "AGM 255Ah", voltage: 12, ah_nominal: 255, dod_max: 0.5, ciclos: 800, type: "AGM", price: 2000000 },
+            { model: "LITIO 200Ah 12V", voltage: 12, ah_nominal: 200, dod_max: 0.9, ciclos: 4000, type: "Litio (LiFePO4)", price: 3500000 },
+            { model: "LITIO 150Ah 24V", voltage: 24, ah_nominal: 150, dod_max: 0.9, ciclos: 4000, type: "Litio (LiFePO4)", price: 5000000 },
+            { model: "LITIO 117Ah 24V", voltage: 24, ah_nominal: 117, dod_max: 0.9, ciclos: 4000, type: "Litio (LiFePO4)", price: 4500000 },
+            { model: "LITIO 73Ah 48V", voltage: 48, ah_nominal: 73, dod_max: 0.9, ciclos: 4000, type: "Litio (LiFePO4)", price: 6000000 },
+            { model: "LITIO 50Ah 48V", voltage: 48, ah_nominal: 50, dod_max: 0.9, ciclos: 4000, type: "Litio (LiFePO4)", price: 4800000 },
+            { model: "LITIO 100Ah 48V", voltage: 48, ah_nominal: 100, dod_max: 0.9, ciclos: 4000, type: "Litio (LiFePO4)", price: 8000000 }
+        ];
+
+
+        // --- DOM References ---
+        const dailyConsumptionInput = document.getElementById('daily-consumption');
+        const autonomyDaysInput = document.getElementById('autonomy-days');
+        const systemVoltageSelect = document.getElementById('system-voltage');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsSection = document.getElementById('results-section');
+        const resultsTbody = document.getElementById('results-tbody');
+        const noResultsMsg = document.getElementById('no-results-msg');
+        const errorMessageDiv = document.getElementById('error-message');
+        const efficiencyInput = document.getElementById('efficiency');
+        const usageProfileSelector = document.getElementById('usage-profile-selector');
+        const compareSelectionBtn = document.getElementById('compare-selection-btn');
+        const selectionDetailsContainer = document.getElementById('comparison-results-container');
+
+
+        // --- Variables Globales ---
+        let currentCompatibleBatteries = [];
+        const MAX_SELECTIONS = 3;
+
+        // --- Utility Functions ---
+        const formatNumber = (num, decimals) => num.toLocaleString('es-CO', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        const formatCurrency = (num) => num.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+
+        // --- Event Listener ---
+        calculateBtn.addEventListener('click', function() {
+            // Limpiar estado previo
+            hideError();
+            resultsTbody.innerHTML = '';
+            resultsSection.classList.add('hidden');
+            noResultsMsg.classList.add('hidden');
+            selectionDetailsContainer.innerHTML = ''; // Limpiar contenedor de comparación
+            selectionDetailsContainer.classList.add('hidden');
+            usageProfileSelector.classList.add('hidden');
+            compareSelectionBtn.classList.add('hidden');
+            compareSelectionBtn.disabled = true;
+
+            // --- Get Inputs ---
+            const dailyConsumptionKWh = parseFloat(dailyConsumptionInput.value);
+            const autonomyDays = parseInt(autonomyDaysInput.value);
+            const systemVoltage = parseInt(systemVoltageSelect.value);
+            const efficiencyPercent = parseFloat(efficiencyInput.value);
+
+            // --- Validate Inputs ---
+            let errorMsg = "";
+            if (isNaN(dailyConsumptionKWh) || dailyConsumptionKWh <= 0) { errorMsg = "Ingresa un consumo diario válido (kWh)."; }
+            else if (isNaN(autonomyDays) || autonomyDays <= 0) { errorMsg = "Ingresa días de autonomía válidos (al menos 1)."; }
+            else if (!systemVoltage) { errorMsg = "Selecciona el voltaje del sistema."; }
+            else if (isNaN(efficiencyPercent) || efficiencyPercent <= 0 || efficiencyPercent > 100) { errorMsg = "Ingresa una eficiencia de batería válida (%)."; }
+
+            if (errorMsg) { showError(errorMsg); return; }
+
+            // --- Calculations & Filtering ---
+            const efficiencyDecimal = efficiencyPercent / 100;
+            currentCompatibleBatteries = [];
+
+            batteryData.forEach((battery, index) => {
+                 const dodDecimal = battery.dod_max;
+                 if (!dodDecimal || dodDecimal <= 0 || dodDecimal > 1) return;
+
+                 const totalEnergyNeededWh = (dailyConsumptionKWh * 1000 * autonomyDays) / (dodDecimal * efficiencyDecimal);
+                 const requiredTotalAhCapacity = totalEnergyNeededWh / systemVoltage;
+
+                if (systemVoltage % battery.voltage !== 0) return;
+                const batteriesInSeries = systemVoltage / battery.voltage;
+
+                if (battery.ah_nominal <= 0) return;
+                const parallelStrings = Math.ceil(requiredTotalAhCapacity / battery.ah_nominal);
+
+                if (parallelStrings > 3) return;
+
+                // Compatible
+                const totalBatteries = batteriesInSeries * parallelStrings;
+                const netAhCapacity = battery.ah_nominal * dodDecimal;
+
+                 currentCompatibleBatteries.push({
+                     ...battery,
+                     series: batteriesInSeries,
+                     parallel: parallelStrings,
+                     total: totalBatteries,
+                     netAh: netAhCapacity,
+                     compatibleIndex: currentCompatibleBatteries.length
+                 });
+
+                // Añadir fila a la tabla
+                const row = resultsTbody.insertRow();
+
+                const selectCell = row.insertCell();
+                const checkInput = document.createElement('input');
+                checkInput.type = 'checkbox';
+                checkInput.name = 'selected_battery_config';
+                checkInput.value = currentCompatibleBatteries.length - 1;
+                checkInput.addEventListener('change', handleBatterySelectionChange);
+                selectCell.appendChild(checkInput);
+
+                row.insertCell().textContent = battery.model;
+                row.insertCell().textContent = battery.voltage;
+                row.insertCell().textContent = battery.ah_nominal;
+                row.insertCell().textContent = battery.type;
+                row.insertCell().textContent = (battery.dod_max * 100).toFixed(0) + '%';
+                row.insertCell().textContent = formatNumber(netAhCapacity, 1);
+                row.insertCell().textContent = battery.ciclos || 'N/A';
+                row.insertCell().textContent = battery.price ? formatCurrency(battery.price) : 'N/A';
+                row.insertCell().textContent = batteriesInSeries;
+                row.insertCell().textContent = parallelStrings;
+                row.insertCell().textContent = totalBatteries;
+            });
+
+            // Mostrar sección de resultados o mensaje de "no encontrados"
+            if (currentCompatibleBatteries.length > 0) {
+                resultsSection.classList.remove('hidden');
+            } else {
+                noResultsMsg.classList.remove('hidden');
+                resultsSection.classList.remove('hidden');
+            }
+        });
+
+         // --- Función para manejar cambio en checkboxes ---
+         function handleBatterySelectionChange() {
+             const checkedBoxes = resultsTbody.querySelectorAll('input[type="checkbox"]:checked');
+             const selectionCount = checkedBoxes.length;
+
+             if (selectionCount > MAX_SELECTIONS) {
+                 this.checked = false;
+                 alert(`Puedes seleccionar un máximo de ${MAX_SELECTIONS} configuraciones.`);
+                 const updatedCheckedBoxes = resultsTbody.querySelectorAll('input[type="checkbox"]:checked');
+                 compareSelectionBtn.disabled = (updatedCheckedBoxes.length === 0);
+                 compareSelectionBtn.classList.toggle('hidden', updatedCheckedBoxes.length === 0);
+                 usageProfileSelector.classList.toggle('hidden', updatedCheckedBoxes.length === 0);
+                 return;
+             }
+
+             compareSelectionBtn.disabled = (selectionCount === 0);
+             compareSelectionBtn.classList.toggle('hidden', selectionCount === 0);
+             usageProfileSelector.classList.toggle('hidden', selectionCount === 0);
+
+             const rows = resultsTbody.querySelectorAll('tr');
+             rows.forEach((row, index) => {
+                 const checkbox = row.querySelector('input[type="checkbox"]');
+                 row.classList.toggle('selected-row', checkbox && checkbox.checked);
+             });
+
+             selectionDetailsContainer.classList.add('hidden');
+             selectionDetailsContainer.innerHTML = '';
+         }
+
+         // --- Listener para el botón de comparar selección ---
+         compareSelectionBtn.addEventListener('click', function() {
+             selectionDetailsContainer.innerHTML = ''; // Limpiar detalles anteriores
+             const checkedBoxes = resultsTbody.querySelectorAll('input[type="checkbox"]:checked');
+             const selectedUsageProfile = document.querySelector('input[name="usage-profile"]:checked');
+
+             if (checkedBoxes.length === 0) {
+                 alert("Por favor, selecciona al menos una configuración de batería.");
+                 selectionDetailsContainer.classList.add('hidden');
+                 return;
+             }
+             if (!selectedUsageProfile) {
+                  alert("Por favor, selecciona un perfil de uso (Normal, Esporádico o Intensivo).");
+                  return;
+             }
+
+             const cyclesPerYear = parseInt(selectedUsageProfile.value);
+
+             // Añadir título a la sección de comparación
+             const comparisonTitle = document.createElement('h3');
+             comparisonTitle.textContent = "Comparación a 10 Años";
+             selectionDetailsContainer.appendChild(comparisonTitle);
+
+
+             checkedBoxes.forEach(checkbox => {
+                 const selectedIndex = parseInt(checkbox.value);
+                 if (selectedIndex >= 0 && selectedIndex < currentCompatibleBatteries.length) {
+                     const selectedConfig = currentCompatibleBatteries[selectedIndex];
+                     displayComparisonDetails(selectedConfig, cyclesPerYear);
+                 }
+             });
+
+              // **NUEVO: Añadir la advertencia de precios al final**
+             const disclaimer = document.createElement('p');
+             disclaimer.classList.add('price-disclaimer');
+             disclaimer.innerHTML = `
+                 <strong>Advertencia:</strong> Los precios mostrados son estimaciones generales y pueden variar considerablemente.
+                 Se recomienda realizar una búsqueda detallada de precios con proveedores locales para obtener cotizaciones precisas.
+             `;
+             selectionDetailsContainer.appendChild(disclaimer);
+
+
+             selectionDetailsContainer.classList.remove('hidden');
+         });
+
+         // --- Función para mostrar los detalles de UNA batería seleccionada para comparación ---
+         function displayComparisonDetails(config, cyclesPerYear) {
+             const detailDiv = document.createElement('div');
+             detailDiv.classList.add('comparison-item');
+
+             const cycles = config.ciclos || 0;
+             const lifespanYears = cycles > 0 && cyclesPerYear > 0 ? cycles / cyclesPerYear : 0;
+             const replacementsNeeded = lifespanYears > 0 && lifespanYears < 10 ? Math.floor(10 / lifespanYears) - (10 % lifespanYears === 0 ? 1:0) : 0;
+             const initialCost = config.price ? config.price * config.total : NaN;
+             const totalCost10Years = !isNaN(initialCost) ? initialCost * (1 + replacementsNeeded) : NaN;
+
+
+             detailDiv.innerHTML = `
+                <h4>${config.model} (${config.type})</h4>
+                <div class="comparison-detail"><span>Configuración Banco:</span><span>${config.series}S / ${config.parallel}P (${config.total} bat.)</span></div>
+                <div class="comparison-detail"><span>Precio Unitario Est.:</span><span>${config.price ? formatCurrency(config.price) : 'N/A'}</span></div>
+                <div class="comparison-detail"><span>Costo Inicial Banco Est.:</span><span>${!isNaN(initialCost) ? formatCurrency(initialCost) : 'N/A'}</span></div>
+                <hr style="margin: 0.5rem 0; border-color: #a5d6a7;">
+                <div class="comparison-detail"><span>Ciclos por Año (Uso):</span><span>${cyclesPerYear}</span></div>
+                <div class="comparison-detail"><span>Vida Útil Estimada:</span><span>${lifespanYears > 0 ? formatNumber(lifespanYears, 1) + ' años' : 'N/A'}</span></div>
+                <div class="comparison-detail"><span>Reemplazos en 10 años:</span><span>${lifespanYears > 0 ? replacementsNeeded : 'N/A'}</span></div>
+                <div class="comparison-detail">
+                     <span>Costo Total Est. (10 años):</span>
+                     <span class="total-cost-10y">${!isNaN(totalCost10Years) ? formatCurrency(totalCost10Years) : 'N/A'}</span>
+                </div>
+             `;
+             selectionDetailsContainer.appendChild(detailDiv);
+         }
+
+
+        // --- Helper Functions ---
+        function showError(message) {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.classList.remove('hidden');
+            resultsSection.classList.add('hidden');
+        }
+        function hideError() {
+            errorMessageDiv.classList.add('hidden');
+        }
+        function clearResults() {
+             resultsTbody.innerHTML = '';
+             noResultsMsg.classList.add('hidden');
+        }
+        function clearResultsAndSelection() {
+             hideError();
+             clearResults();
+             resultsSection.classList.add('hidden');
+             selectionDetailsContainer.innerHTML = '';
+             selectionDetailsContainer.classList.add('hidden');
+             usageProfileSelector.classList.add('hidden');
+             compareSelectionBtn.classList.add('hidden');
+             compareSelectionBtn.disabled = true;
+             const usageRadios = document.querySelectorAll('input[name="usage-profile"]');
+             usageRadios.forEach(radio => radio.checked = (radio.value === '365'));
+        }
+
+        // Limpiar resultados si cambian los inputs
+        dailyConsumptionInput.addEventListener('input', clearResultsAndSelection);
+        autonomyDaysInput.addEventListener('input', clearResultsAndSelection);
+        systemVoltageSelect.addEventListener('change', clearResultsAndSelection);
+        efficiencyInput.addEventListener('input', clearResultsAndSelection);
+
+
+        // Initial setup
+        hideError();
+
+    </script>
+
+</body>
+</html>
+

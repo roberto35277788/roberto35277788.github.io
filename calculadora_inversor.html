@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de Inversor Off-Grid</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f1f5f9; /* Gris azulado muy claro */
+            color: #1e293b; /* Gris azulado oscuro */
+            line-height: 1.6;
+            padding: 1rem;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 1.5rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+            max-width: 1000px; /* Ancho para dos columnas + tabla */
+            margin: 2rem auto;
+        }
+        h1, h2 {
+            color: #334155; /* Gris más oscuro */
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        h2 {
+            font-size: 1.25rem;
+            margin-top: 1.5rem;
+            color: #475569; /* Gris medio */
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 0.6rem;
+            margin-bottom: 0.8rem;
+            border: 1px solid #cbd5e1; /* Borde gris claro */
+            border-radius: 4px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #64748b; /* Gris medio en foco */
+            box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.25);
+        }
+        button {
+            display: inline-block; /* Permitir botones lado a lado */
+            padding: 0.7rem 1.2rem;
+            background-color: #4f46e5; /* Índigo */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: 0.5rem; /* Reducido */
+            margin-right: 0.5rem; /* Espacio entre botones */
+        }
+        button:hover {
+            background-color: #4338ca; /* Índigo más oscuro */
+        }
+        button.secondary { /* Estilo para botón de limpiar */
+             background-color: #64748b;
+        }
+         button.secondary:hover {
+             background-color: #475569;
+         }
+         /* Botón Buscar Inversores */
+         #calculate-btn {
+             background-color: #16a34a; /* Verde */
+             width: 100%; /* Ocupar ancho completo en su celda */
+             margin-top: 1.5rem;
+         }
+         #calculate-btn:hover {
+             background-color: #15803d;
+         }
+
+
+        /* Grid para layout principal */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr; /* Una columna por defecto */
+            gap: 2rem;
+        }
+        @media (min-width: 768px) { /* md: */
+            .main-layout {
+                grid-template-columns: repeat(2, 1fr); /* Dos columnas */
+            }
+        }
+
+        /* Controles para añadir electrodoméstico */
+        .add-appliance-controls {
+             display: grid;
+             grid-template-columns: 1fr auto; /* Columna principal y botón */
+             gap: 0.75rem;
+             align-items: flex-end; /* Alinear en la base */
+             margin-bottom: 1rem;
+        }
+        .add-appliance-controls > div {
+             display: grid;
+             grid-template-columns: 1fr 100px; /* Nombre y Potencia */
+             gap: 0.5rem;
+        }
+         .add-appliance-controls button {
+             width: auto; /* Ancho automático para el botón */
+             margin-top: 0; /* Quitar margen superior */
+             height: calc(0.6rem * 2 + 2px + 0.8rem); /* Alinear altura con inputs aprox */
+             padding: 0 1rem; /* Ajustar padding horizontal */
+         }
+
+
+        /* Lista de electrodomésticos */
+        #appliance-list-container {
+            margin-top: 1rem;
+        }
+        #appliance-list {
+            background-color: #f8fafc; /* Gris muy claro */
+            padding: 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e2e8f0;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        .appliance-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0.2rem;
+            border-bottom: 1px dashed #e2e8f0;
+            font-size: 0.9rem;
+        }
+        .appliance-item:last-child { border-bottom: none; }
+        .remove-appliance-btn {
+            background-color: #ef4444; /* Rojo */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            line-height: 18px;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 0.5rem;
+            flex-shrink: 0;
+        }
+         .remove-appliance-btn:hover { background-color: #dc2626; }
+
+        /* Total Potencia */
+        #total-power-info {
+            font-weight: bold;
+            text-align: right;
+            margin-top: 0.5rem;
+            font-size: 1rem;
+            color: #1e3a8a; /* Azul oscuro */
+        }
+
+        /* Tabla de resultados */
+        #results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            overflow-x: auto; display: block;
+        }
+        #results-table th, #results-table td {
+            border: 1px solid #ddd; padding: 0.7rem; text-align: left;
+            font-size: 0.9rem; white-space: nowrap; vertical-align: middle;
+        }
+        #results-table th {
+            background-color: #4f46e5; color: white; font-weight: bold;
+            position: sticky; top: 0; z-index: 1;
+        }
+        #results-table tr:nth-child(even) { background-color: #f1f5f9; }
+        #results-table tr:hover { background-color: #e0e7ff; }
+        #results-output p { margin-top: 1rem; text-align: center; font-style: italic; color: #666; }
+        .error-message { color: #dc3545; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 0.75rem; border-radius: 4px; margin-top: 1rem; text-align: center; }
+        .hidden { display: none; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Selector de Inversor Off-Grid</h1>
+        <p class="subtitle" style="margin-bottom: 1rem;">Encuentra inversores para alimentar tus electrodomésticos sin conexión a la red.</p>
+
+        <div class="main-layout">
+            <div class="section">
+                <h2>1. Electrodomésticos a Usar Simultáneamente</h2>
+
+                 <div style="margin-bottom: 1rem;">
+                     <label for="predefined-appliance-select">Seleccionar Electrodoméstico (Opcional):</label>
+                     <select id="predefined-appliance-select">
+                         <option value="">-- Elige para autocompletar --</option>
+                         </select>
+                 </div>
+
+                 <div class="add-appliance-controls">
+                     <div>
+                        <div>
+                            <label for="appliance-name">Nombre:</label>
+                            <input type="text" id="appliance-name" placeholder="Ej: Nevera">
+                        </div>
+                        <div>
+                            <label for="appliance-power">Potencia (W):</label>
+                            <input type="number" id="appliance-power" min="1" placeholder="Ej: 150">
+                        </div>
+                     </div>
+                     <button id="add-appliance-btn" title="Añadir a la lista de abajo">+</button>
+                 </div>
+                 <p id="add-error-message" class="error-message hidden"></p> <div id="appliance-list-container">
+                     <label>Lista de Electrodomésticos (Uso Simultáneo):</label>
+                     <div id="appliance-list">
+                         <p id="empty-list-msg">Añade los aparatos que usarás al mismo tiempo.</p>
+                     </div>
+                     <div id="total-power-info">Potencia Total Requerida: <span id="total-power">0</span> W</div>
+                 </div>
+            </div>
+
+            <div class="section">
+                <h2>2. Parámetros del Sistema</h2>
+                <div class="input-grid" style="grid-template-columns: 1fr 1fr;"> <div>
+                        <label for="dc-voltage">Voltaje Baterías (Entrada DC):</label>
+                        <select id="dc-voltage">
+                            <option value="">-- Selecciona --</option>
+                            <option value="12">12 V</option>
+                            <option value="24">24 V</option>
+                            <option value="48">48 V</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="ac-voltage">Voltaje Salida AC Requerido:</label>
+                        <select id="ac-voltage">
+                            <option value="120" selected>120 V</option>
+                            </select>
+                         <p class="input-hint">Salida AC fijada a 120V.</p>
+                    </div>
+                </div>
+                 <button id="calculate-btn">Buscar Inversores</button>
+                 <div id="error-message-inv" class="error-message hidden"></div> <div id="results-section" class="results hidden" style="margin-top: 2rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem;">
+                    <h2>3. Inversores Off-Grid Compatibles</h2>
+                    <div id="results-output">
+                        <p id="no-results-msg" class="hidden">No se encontraron inversores compatibles con estos parámetros.</p>
+                        <table id="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Potencia Salida AC (W)</th>
+                                    <th>Voltaje Entrada DC (V)</th>
+                                    <th>Voltaje Salida AC (V)</th>
+                                    </tr>
+                            </thead>
+                            <tbody id="results-tbody">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Datos de Electrodomésticos Comunes (Potencias Aprox.) ---
+        const defaultAppliances = {
+            'Nevera': 150, 'TV LED 40': 50, 'Bombillo LED': 10, 'Computador Portatil': 50,
+            'Computador Torre': 250, 'Cargador Celular': 5, 'PlayStation 5': 200, 'Xbox Series X': 170,
+            'Cafetera': 1000, 'Olla Arrocera': 500, 'Microondas': 1100, 'Lavadora': 500,
+            'Plancha Ropa': 1200, 'Plancha Cabello': 50, 'Secadora Cabello': 1500,
+            'Licuadora': 300, 'Ventilador': 50, 'Taladro': 600
+        };
+
+        // --- Datos de Inversores (Basado en image_f64383.png) ---
+        const offGridInverterData = [
+            { model: "INV-12-250", nominalPowerAC: 250, dcInputVoltage: 12, acOutputVoltage: 120 },
+            { model: "INV-12-375", nominalPowerAC: 375, dcInputVoltage: 12, acOutputVoltage: 120 },
+            { model: "INV-12-500", nominalPowerAC: 500, dcInputVoltage: 12, acOutputVoltage: 120 },
+            { model: "INV-12-800", nominalPowerAC: 800, dcInputVoltage: 12, acOutputVoltage: 120 },
+            { model: "INV-12-1200", nominalPowerAC: 1200, dcInputVoltage: 12, acOutputVoltage: 120 },
+            { model: "INV-12-2000", nominalPowerAC: 2000, dcInputVoltage: 12, acOutputVoltage: 120 },
+            { model: "INV-12-3000", nominalPowerAC: 3000, dcInputVoltage: 12, acOutputVoltage: 120 },
+            { model: "INV-24-250", nominalPowerAC: 250, dcInputVoltage: 24, acOutputVoltage: 120 },
+            { model: "INV-24-375", nominalPowerAC: 375, dcInputVoltage: 24, acOutputVoltage: 120 },
+            { model: "INV-24-500", nominalPowerAC: 500, dcInputVoltage: 24, acOutputVoltage: 120 },
+            { model: "INV-24-800", nominalPowerAC: 800, dcInputVoltage: 24, acOutputVoltage: 120 },
+            { model: "INV-24-1200", nominalPowerAC: 1200, dcInputVoltage: 24, acOutputVoltage: 120 },
+            { model: "INV-24-2000", nominalPowerAC: 2000, dcInputVoltage: 24, acOutputVoltage: 120 },
+            { model: "INV-24-3000", nominalPowerAC: 3000, dcInputVoltage: 24, acOutputVoltage: 120 },
+            { model: "INV-48-250", nominalPowerAC: 250, dcInputVoltage: 48, acOutputVoltage: 120 },
+            { model: "INV-48-375", nominalPowerAC: 375, dcInputVoltage: 48, acOutputVoltage: 120 },
+            { model: "INV-48-500", nominalPowerAC: 500, dcInputVoltage: 48, acOutputVoltage: 120 },
+            { model: "INV-48-800", nominalPowerAC: 800, dcInputVoltage: 48, acOutputVoltage: 120 },
+            { model: "INV-48-1200", nominalPowerAC: 1200, dcInputVoltage: 48, acOutputVoltage: 120 },
+            { model: "INV-48-2000", nominalPowerAC: 2000, dcInputVoltage: 48, acOutputVoltage: 120 },
+            { model: "INV-48-3000", nominalPowerAC: 3000, dcInputVoltage: 48, acOutputVoltage: 120 }
+        ];
+
+        // --- DOM References ---
+        const predefinedApplianceSelect = document.getElementById('predefined-appliance-select');
+        const applianceNameInput = document.getElementById('appliance-name');
+        const appliancePowerInput = document.getElementById('appliance-power');
+        const addApplianceBtn = document.getElementById('add-appliance-btn');
+        const applianceListDiv = document.getElementById('appliance-list');
+        const emptyListMsg = document.getElementById('empty-list-msg');
+        const totalPowerSpan = document.getElementById('total-power');
+        const dcVoltageSelect = document.getElementById('dc-voltage');
+        const acVoltageSelect = document.getElementById('ac-voltage');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const addErrorMessageDiv = document.getElementById('add-error-message');
+        const errorMessageInvDiv = document.getElementById('error-message-inv');
+        const resultsSection = document.getElementById('results-section');
+        const resultsTbody = document.getElementById('results-tbody');
+        const noResultsMsg = document.getElementById('no-results-msg');
+
+        // --- Data Storage ---
+        let appliances = [];
+        let nextApplianceId = 0;
+
+        // --- Populate Predefined Appliance Select ---
+        for (const name in defaultAppliances) {
+            if (name !== 'Otro') {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = `${name} (${defaultAppliances[name]}W)`;
+                predefinedApplianceSelect.appendChild(option);
+            }
+        }
+
+        // --- Utility Functions ---
+        const formatNumber = (num, decimals) => num.toLocaleString('es-CO', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+        // --- Event Listeners ---
+
+        // Autocompletar campos al seleccionar electrodoméstico predefinido
+        predefinedApplianceSelect.addEventListener('change', function() {
+            const selectedName = this.value;
+            if (selectedName && defaultAppliances[selectedName]) {
+                applianceNameInput.value = selectedName;
+                appliancePowerInput.value = defaultAppliances[selectedName];
+                hideAddError();
+            } else {
+                applianceNameInput.value = '';
+                appliancePowerInput.value = '';
+            }
+        });
+
+        // Añadir Electrodoméstico
+        addApplianceBtn.addEventListener('click', function() {
+            const name = applianceNameInput.value.trim() || `Aparato ${nextApplianceId + 1}`;
+            const power = parseFloat(appliancePowerInput.value);
+
+            if (isNaN(power) || power <= 0) {
+                showAddError("Ingresa una potencia válida para el electrodoméstico.");
+                return;
+            }
+            hideAddError();
+
+            appliances.push({ id: nextApplianceId++, name: name, power: power });
+            renderApplianceList();
+            updateTotalPower();
+
+            applianceNameInput.value = '';
+            appliancePowerInput.value = '';
+            predefinedApplianceSelect.value = '';
+            applianceNameInput.focus();
+        });
+
+        // Eliminar Electrodoméstico
+        applianceListDiv.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-appliance-btn')) {
+                const idToRemove = parseInt(event.target.getAttribute('data-id'));
+                appliances = appliances.filter(app => app.id !== idToRemove);
+                renderApplianceList();
+                updateTotalPower();
+            }
+        });
+
+        // Buscar Inversores
+        calculateBtn.addEventListener('click', function() {
+            hideInvError();
+            resultsTbody.innerHTML = '';
+            noResultsMsg.classList.add('hidden');
+            resultsSection.classList.add('hidden');
+
+            const totalAppliancePower = appliances.reduce((sum, app) => sum + app.power, 0);
+            const dcVoltage = parseInt(dcVoltageSelect.value);
+            const acVoltage = parseInt(acVoltageSelect.value); // Siempre será 120 ahora
+
+            let errorMsg = "";
+            if (totalAppliancePower === 0) { errorMsg = "Añade al menos un electrodoméstico a la lista."; }
+            else if (!dcVoltage) { errorMsg = "Selecciona el Voltaje DC del sistema (baterías)."; }
+            else if (!acVoltage) { errorMsg = "Selecciona el Voltaje AC de salida requerido (120V)."; }
+
+            if (errorMsg) { showInvError(errorMsg); return; }
+
+            const requiredInverterPower = totalAppliancePower * 1.25; // Margen de seguridad
+
+            const compatibleInverters = offGridInverterData.filter(inverter => {
+                if (inverter.dcInputVoltage !== dcVoltage) return false;
+                if (inverter.acOutputVoltage !== acVoltage) return false;
+                if (inverter.nominalPowerAC < requiredInverterPower) return false;
+                return true;
+            });
+
+            // --- Display Results ---
+            if (compatibleInverters.length > 0) {
+                compatibleInverters.forEach(inverter => {
+                    const row = resultsTbody.insertRow();
+                    // Mostrar solo las columnas solicitadas
+                    row.insertCell().textContent = inverter.nominalPowerAC;
+                    row.insertCell().textContent = inverter.dcInputVoltage;
+                    row.insertCell().textContent = inverter.acOutputVoltage;
+                });
+                resultsSection.classList.remove('hidden');
+            } else {
+                noResultsMsg.classList.remove('hidden');
+                resultsSection.classList.remove('hidden');
+            }
+
+        });
+
+
+        // --- Helper Functions ---
+        function renderApplianceList() {
+            applianceListDiv.innerHTML = '';
+            if (appliances.length === 0) {
+                applianceListDiv.appendChild(emptyListMsg);
+                emptyListMsg.classList.remove('hidden');
+            } else {
+                emptyListMsg.classList.add('hidden');
+                appliances.forEach(app => {
+                    const div = document.createElement('div');
+                    div.classList.add('appliance-item');
+                    div.innerHTML = `
+                        <span>${app.name} (${app.power} W)</span>
+                        <button class="remove-appliance-btn" data-id="${app.id}" title="Eliminar">&times;</button>
+                    `;
+                    applianceListDiv.appendChild(div);
+                });
+            }
+        }
+
+        function updateTotalPower() {
+            const total = appliances.reduce((sum, app) => sum + app.power, 0);
+            totalPowerSpan.textContent = total;
+             clearInverterResults();
+        }
+
+        function showAddError(message) { addErrorMessageDiv.textContent = message; addErrorMessageDiv.classList.remove('hidden'); }
+        function hideAddError() { addErrorMessageDiv.classList.add('hidden'); }
+        function showInvError(message) { errorMessageInvDiv.textContent = message; errorMessageInvDiv.classList.remove('hidden'); }
+        function hideInvError() { errorMessageInvDiv.classList.add('hidden'); }
+
+        function clearInverterResults() {
+            resultsTbody.innerHTML = '';
+            resultsSection.classList.add('hidden');
+            noResultsMsg.classList.add('hidden');
+            hideInvError();
+        }
+
+        // Limpiar resultados si cambian voltajes
+        dcVoltageSelect.addEventListener('change', clearInverterResults);
+        acVoltageSelect.addEventListener('change', clearInverterResults);
+
+
+        // Initial setup
+        renderApplianceList();
+        hideAddError();
+        hideInvError();
+
+    </script>
+
+</body>
+</html>

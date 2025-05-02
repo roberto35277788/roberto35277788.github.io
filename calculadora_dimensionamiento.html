@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Dimensionamiento Solar (Consumo Diario/Mensual)</title>
+    <style>
+        /* --- Reset Básico y Estilos Globales --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f0f9ff; color: #374151; line-height: 1.6; padding: 1rem;
+        }
+        .container {
+            background-color: #ffffff; padding: 1.5rem 2rem; border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            width: 100%; max-width: 60rem; margin: 2rem auto;
+        }
+        /* --- Encabezado --- */
+        .header { display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; gap: 0.75rem; color: #059669; }
+        .header svg { width: 2.5rem; height: 2.5rem; }
+        .header h1 { font-size: 1.75rem; font-weight: 700; text-align: center; }
+        .subtitle { text-align: center; color: #4b5563; margin-bottom: 2rem; font-size: 1rem; }
+        /* --- Secciones --- */
+        .section { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; }
+        .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .section-title { font-size: 1.25rem; font-weight: 600; color: #047857; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .section-title svg { width: 1.5rem; height: 1.5rem; }
+
+        /* --- Sección Calculadora Dimensionamiento --- */
+        .calculator-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+        @media (min-width: 768px) { .calculator-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .calculator-grid { grid-template-columns: repeat(4, 1fr); } }
+
+         /* Contenedor para Consumo + Periodo */
+         .consumption-input-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Más espacio para el número */
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        /* Hacer que el grupo de consumo ocupe más espacio si es posible */
+        .calculator-grid > div:first-child {
+             grid-column: span 1; /* Por defecto */
+        }
+         @media (min-width: 768px) {
+             .calculator-grid > div:first-child {
+                 grid-column: span 2; /* Ocupa 2 columnas en md */
+             }
+         }
+          @media (min-width: 1024px) {
+             .calculator-grid > div:first-child {
+                 grid-column: span 2; /* Ocupa 2 columnas en lg también */
+             }
+         }
+
+
+        label { display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+        input[type="number"], select {
+            margin-top: 0.1rem; display: block; width: 100%; padding: 0.5rem 0.75rem; font-size: 0.9rem;
+            border: 1px solid #d1d5db; border-radius: 0.375rem; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            background-color: #fff; appearance: none;
+        }
+         select {
+             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+             background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;
+         }
+        input:focus, select:focus { outline: 2px solid transparent; outline-offset: 2px; border-color: #059669; box-shadow: 0 0 0 2px #6ee7b7; }
+        input[readonly] { background-color: #f3f4f6; cursor: not-allowed; }
+        .input-hint { margin-top: 0.25rem; font-size: 0.75rem; color: #6b7280; }
+
+        /* --- Botón Calcular --- */
+        .calculate-button-container { margin-top: 1.5rem; text-align: center; grid-column: 1 / -1; }
+        #calculate-btn { display: inline-flex; padding: 0.6rem 1.5rem; border: none; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1); font-size: 1rem; font-weight: 600; color: #ffffff; background-color: #059669; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; }
+        #calculate-btn:hover { background-color: #047857; }
+        #calculate-btn:active { transform: scale(0.98); }
+        #calculate-btn svg { width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; }
+
+        /* --- Resultados --- */
+        #calculator-results { margin-top: 2rem; background-color: #ecfdf5; padding: 1rem 1.5rem; border-radius: 0.5rem; border: 1px solid #a7f3d0; }
+        #calculator-results h3 { font-size: 1.1rem; font-weight: 600; color: #065f46; margin-bottom: 1rem; text-align: center; }
+        .result-item { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px dashed #a7f3d0; font-size: 0.95rem; color: #047857; }
+        .result-item:last-child { border-bottom: none; }
+        .result-item span:first-child { display: flex; align-items: center; gap: 0.4rem; }
+        .result-item span:first-child svg { width: 1.1rem; height: 1.1rem; color: #059669; }
+        .result-item span:last-child { font-weight: 700; font-size: 1.1rem; color: #065f46; }
+        .result-note { font-size: 0.8rem; color: #57534e; text-align: center; margin-top: 0.75rem; }
+        .error-message { margin-top: 0.75rem; font-size: 0.875rem; color: #dc2626; font-weight: 500; text-align: center; }
+        .hidden { display: none !important; }
+
+        /* Estilos para especificaciones adicionales */
+        #panel-specs { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #a7f3d0; }
+        #panel-specs h4 { font-size: 1rem; font-weight: 600; color: #065f46; margin-bottom: 0.5rem; text-align: center; }
+        .spec-item { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.2rem 0; color: #115e59; }
+        .spec-item span:last-child { font-weight: 600; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75v10.5m-7.5-10.5v10.5m6.375-12.375h.625a1.125 1.125 0 0 1 1.125 1.125v16.5a1.125 1.125 0 0 1-1.125 1.125H8.25a1.125 1.125 0 0 1-1.125-1.125V5.625a1.125 1.125 0 0 1 1.125-1.125h.625m6.375 0V17.25m-7.5 0V4.875M15 17.25H9" />
+            </svg>
+            <h1>Calculadora de Dimensionamiento Solar</h1>
+        </div>
+        <p class="subtitle">Descubre cuántos paneles solares necesitas para cubrir tu consumo energético.</p>
+
+        <div class="section calculator">
+             <h2 class="section-title">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 15.75V18m-7.5-6.75h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V13.5Zm0 2.25h.008v.008H8.25v-.008Zm0 2.25h.008v.008H8.25V18Zm2.498-6.75h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V13.5Zm0 2.25h.007v.008h-.007v-.008Zm0 2.25h.007v.008h-.007V18Zm2.504-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5Zm0 2.25h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V18Zm2.498-6.75h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V13.5ZM8.25 6h7.5v2.25h-7.5V6ZM12 2.25c-1.892 0-3.758.11-5.593.322C5.307 2.7 4.5 3.65 4.5 4.757V19.5a2.25 2.25 0 0 0 2.25 2.25h10.5a2.25 2.25 0 0 0 2.25-2.25V4.757c0-1.108-.806-2.057-1.907-2.185A48.208 48.208 0 0 0 12 2.25Z" />
+                </svg>
+                Calculadora de Número de Paneles
+            </h2>
+            <div class="calculator-grid">
+                 <div style="grid-column: span 2;">
+                    <label for="consumption-value">Consumo Requerido (kWh):</label>
+                    <div class="consumption-input-group">
+                        <input type="number" id="consumption-value" name="consumption-value" placeholder="Ej: 5 o 150" min="0.1" step="0.1">
+                        <select id="consumption-period" name="consumption-period">
+                            <option value="daily" selected>Diario</option>
+                            <option value="monthly">Mensual</option>
+                        </select>
+                    </div>
+                    <p class="input-hint">Ingresa tu consumo y selecciona el periodo.</p>
+                </div>
+
+                 <div>
+                     <label for="location-hsp-select">Ubicación (HSP aprox.):</label>
+                     <select id="location-hsp-select" name="location-hsp-select">
+                         <option value="">-- Selecciona Ubicación --</option>
+                         <option value="4.7">Arauca (4.7 HSP)</option>
+                         <option value="4.2">Armenia (4.2 HSP)</option>
+                         <option value="5.4">Barranquilla (5.4 HSP)</option>
+                         <option value="4.1">Bogotá D.C. (4.1 HSP)</option>
+                         <option value="4.5">Bucaramanga (4.5 HSP)</option>
+                         <option value="4.3">Cali (4.3 HSP)</option>
+                         <option value="5.3">Cartagena (5.3 HSP)</option>
+                         <option value="4.8">Cúcuta (4.8 HSP)</option>
+                         <option value="3.8">Florencia (3.8 HSP)</option>
+                         <option value="4.0">Ibagué (4.0 HSP)</option>
+                         <option value="4.0">Inírida (4.0 HSP)</option>
+                         <option value="3.5">Leticia (3.5 HSP)</option>
+                         <option value="4.2">Manizales (4.2 HSP)</option>
+                         <option value="4.2">Medellín (4.2 HSP)</option>
+                         <option value="3.6">Mitú (3.6 HSP)</option>
+                         <option value="3.7">Mocoa (3.7 HSP)</option>
+                         <option value="5.0">Montería (5.0 HSP)</option>
+                         <option value="4.5">Neiva (4.5 HSP)</option>
+                         <option value="3.8">Pasto (3.8 HSP)</option>
+                         <option value="4.2">Pereira (4.2 HSP)</option>
+                         <option value="3.9">Popayán (3.9 HSP)</option>
+                         <option value="4.8">Puerto Carreño (4.8 HSP)</option>
+                         <option value="3.3">Quibdó (3.3 HSP)</option>
+                         <option value="5.8">Riohacha (5.8 HSP)</option>
+                         <option value="5.5">San Andrés Isla (5.5 HSP)</option>
+                         <option value="3.9">San José del Guaviare (3.9 HSP)</option>
+                         <option value="5.3">Santa Marta (5.3 HSP)</option>
+                         <option value="5.1">Sincelejo (5.1 HSP)</option>
+                         <option value="4.0">Tunja (4.0 HSP)</option>
+                         <option value="5.2">Valledupar (5.2 HSP)</option>
+                         <option value="4.0">Villavicencio (4.0 HSP)</option>
+                         <option value="4.6">Yopal (4.6 HSP)</option>
+                         <option value="manual">Otro (Ingresar Manual)</option>
+                     </select>
+                     <p class="input-hint">Selecciona o ingresa manualmente.</p>
+                 </div>
+
+                 <div>
+                    <label for="hsp">Horas Sol Pico (HSP):</label>
+                    <input type="number" id="hsp" name="hsp" placeholder="Selecciona ubicación" min="1" max="8" step="0.1" readonly>
+                     <p class="input-hint">Valor de tu zona.</p>
+                </div>
+
+                <div>
+                    <label for="panel-select">Modelo de Panel:</label>
+                    <select id="panel-select" name="panel-select">
+                        <option value="">-- Selecciona Modelo --</option>
+                        <option value="poli_10">Policristalino 10W</option>
+                        <option value="poli_50">Policristalino 50W</option>
+                        <option value="poli_60">Policristalino 60W</option>
+                        <option value="poli_80">Policristalino 80W</option>
+                        <option value="poli_100">Policristalino 100W</option>
+                        <option value="poli_150">Policristalino 150W</option>
+                        <option value="poli_160">Policristalino 160W</option>
+                        <option value="poli_170">Policristalino 170W</option>
+                        <option value="mono_210">Monocristalino 210W</option>
+                        <option value="mono_220">Monocristalino 220W</option>
+                        <option value="mono_230">Monocristalino 230W</option>
+                        <option value="mono_340">Monocristalino 340W</option>
+                        <option value="mono_380">Monocristalino 380W</option>
+                        <option value="mono_450">Monocristalino 450W</option>
+                        <option value="otro">Otro (Ingresar Manual)</option>
+                    </select>
+                     <p class="input-hint">Selecciona o elige "Otro".</p>
+                </div>
+
+                <div>
+                    <label for="panel-wattage">Potencia del Panel (Wp):</label>
+                    <input type="number" id="panel-wattage" name="panel-wattage" placeholder="Ej: 450" min="1">
+                    <p class="input-hint">Potencia de un panel.</p>
+                </div>
+
+                <div>
+                    <label for="performance-ratio">Rendimiento del Sistema (%):</label>
+                    <input type="number" id="performance-ratio" name="performance-ratio" value="80" min="50" max="95">
+                    <p class="input-hint">Eficiencia real (75-85% típico).</p>
+                </div>
+            </div>
+            <div class="calculate-button-container">
+                <button id="calculate-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M10 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16ZM7.75 6.227a.75.75 0 0 1 1.06 0l1.25 1.25a.75.75 0 0 1 0 1.06l-1.25 1.25a.75.75 0 0 1-1.06-1.06L8.44 8 7.75 7.287a.75.75 0 0 1 0-1.06ZM12.25 6.227a.75.75 0 0 0-1.06 0L9.94 7.477a.75.75 0 0 0 0 1.06l1.25 1.25a.75.75 0 0 0 1.06-1.06L11.56 8l.69-.713a.75.75 0 0 0 0-1.06ZM10 12.25a.75.75 0 0 1 .75.75v.25h.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1 0-1.5h.5v-.25a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
+                    </svg>
+                    Calcular Número de Paneles
+                </button>
+            </div>
+             <div id="calculator-results" class="hidden">
+                 <h3>Resultado del Dimensionamiento</h3>
+                 <div class="result-item">
+                     <span>
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.125 1.125 0 0 1 0 2.25H5.625a1.125 1.125 0 0 1 0-2.25Z" />
+                         </svg>
+                         Número de Paneles Necesarios:
+                     </span>
+                     <span id="num-panels-needed">--</span>
+                 </div>
+                  <div class="result-item">
+                     <span>
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                           <path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clip-rule="evenodd" />
+                         </svg>
+                         Producción Diaria Estimada:
+                     </span>
+                     <span id="estimated-daily-prod">--</span> kWh
+                 </div>
+                 <div class="result-item">
+                     <span>
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H4.75Z" clip-rule="evenodd" />
+                        </svg>
+                         Producción Mensual Estimada:
+                     </span>
+                     <span id="estimated-monthly-prod">--</span> kWh
+                 </div>
+                 <div id="panel-specs" class="hidden">
+                     <h4>Especificaciones del Panel Seleccionado</h4>
+                     <div class="spec-item"><span>Voltaje Circuito Abierto (Voc):</span><span id="spec-voc">--</span> V</div>
+                     <div class="spec-item"><span>Corriente Corto Circuito (Isc):</span><span id="spec-isc">--</span> A</div>
+                     <div class="spec-item"><span>Voltaje Máx. Potencia (Vmp):</span><span id="spec-vmp">--</span> V</div>
+                     <div class="spec-item"><span>Corriente Máx. Potencia (Imp):</span><span id="spec-imp">--</span> A</div>
+                 </div>
+                 <p class="result-note">La producción estimada considera el número de paneles redondeado hacia arriba.</p>
+                 <p id="calculator-error" class="error-message hidden"></p>
+             </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const consumptionValueInput = document.getElementById('consumption-value'); // Input valor consumo
+        const consumptionPeriodSelect = document.getElementById('consumption-period'); // Select periodo consumo
+        const locationHspSelect = document.getElementById('location-hsp-select');
+        const panelSelect = document.getElementById('panel-select');
+        const panelWattageInput = document.getElementById('panel-wattage');
+        const hspInput = document.getElementById('hsp');
+        const performanceRatioInput = document.getElementById('performance-ratio');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsDiv = document.getElementById('calculator-results');
+        const numPanelsNeededSpan = document.getElementById('num-panels-needed');
+        const estimatedDailyProdSpan = document.getElementById('estimated-daily-prod');
+        const estimatedMonthlyProdSpan = document.getElementById('estimated-monthly-prod');
+        const errorMsgP = document.getElementById('calculator-error');
+        // Referencias para especificaciones adicionales
+        const panelSpecsDiv = document.getElementById('panel-specs');
+        const specVocSpan = document.getElementById('spec-voc');
+        const specIscSpan = document.getElementById('spec-isc');
+        const specVmpSpan = document.getElementById('spec-vmp');
+        const specImpSpan = document.getElementById('spec-imp');
+
+        // --- Objeto con datos completos de paneles ---
+        const panelData = {
+            'poli_10': { wattage: 10, voc: 22, isc: 0.58, vmp: 18.36, imp: 0.54 },
+            'poli_50': { wattage: 50, voc: 22.5, isc: 2.98, vmp: 18.2, imp: 2.75 },
+            'poli_60': { wattage: 60, voc: 20.3, isc: 3.37, vmp: 19.25, imp: 3.12 },
+            'poli_80': { wattage: 80, voc: 21.96, isc: 4.73, vmp: 18.3, imp: 4.38 },
+            'poli_100': { wattage: 100, voc: 22.1, isc: 6.02, vmp: 17.9, imp: 5.59 },
+            'poli_150': { wattage: 150, voc: 22.51, isc: 8.75, vmp: 18.4, imp: 8.15 },
+            'poli_160': { wattage: 160, voc: 23.21, isc: 8.98, vmp: 18.6, imp: 8.6 },
+            'poli_170': { wattage: 170, voc: 23.26, isc: 9.18, vmp: 19.32, imp: 8.8 },
+            'mono_210': { wattage: 210, voc: 23.95, isc: 11.07, vmp: 20.05, imp: 10.47 },
+            'mono_220': { wattage: 220, voc: 24.03, isc: 11.53, vmp: 20.12, imp: 10.93 },
+            'mono_230': { wattage: 230, voc: 24.1, isc: 11.99, vmp: 20.19, imp: 11.39 },
+            'mono_340': { wattage: 340, voc: 41.55, isc: 10.46, vmp: 34.73, imp: 9.79 },
+            'mono_380': { wattage: 380, voc: 48.71, isc: 10.05, vmp: 40.03, imp: 9.56 },
+            'mono_450': { wattage: 450, voc: 50, isc: 11.44, vmp: 41.4, imp: 10.87 },
+            'otro': null
+        };
+
+        // --- Utility Functions ---
+        const formatNumber = (num, decimals) => num.toLocaleString('es-CO', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+        // --- Event Listeners ---
+
+        // Autocompletar potencia panel
+        panelSelect.addEventListener('change', function() {
+            const selectedKey = this.value;
+            const selectedPanel = panelData[selectedKey];
+            if (selectedPanel) {
+                panelWattageInput.value = selectedPanel.wattage;
+                panelWattageInput.readOnly = true;
+                panelWattageInput.style.backgroundColor = '#f3f4f6';
+            } else {
+                panelWattageInput.value = '';
+                panelWattageInput.readOnly = false;
+                panelWattageInput.style.backgroundColor = '#fff';
+                panelWattageInput.placeholder = 'Ingresa Potencia';
+            }
+             clearResultsAndError();
+        });
+
+         // Listener para el Select de Ubicación/HSP
+         locationHspSelect.addEventListener('change', function() {
+             const selectedValue = this.value;
+             if (selectedValue === 'manual') {
+                 hspInput.value = '';
+                 hspInput.readOnly = false;
+                 hspInput.style.backgroundColor = '#fff';
+                 hspInput.placeholder = 'Ingresa HSP';
+                 hspInput.focus();
+             } else if (selectedValue) {
+                 hspInput.value = selectedValue;
+                 hspInput.readOnly = true;
+                 hspInput.style.backgroundColor = '#f3f4f6';
+             } else {
+                 hspInput.value = '';
+                 hspInput.readOnly = true;
+                 hspInput.style.backgroundColor = '#f3f4f6';
+                 hspInput.placeholder = 'Selecciona ubicación';
+             }
+             clearResultsAndError();
+         });
+
+         // Limpiar resultados si se editan inputs manualmente
+         consumptionValueInput.addEventListener('input', clearResultsAndError); // CAMBIO
+         consumptionPeriodSelect.addEventListener('change', clearResultsAndError); // CAMBIO
+         panelWattageInput.addEventListener('input', function() {
+             if (panelSelect.value !== 'otro' && panelSelect.value !== '') {
+                 panelSelect.value = 'otro';
+                 panelWattageInput.readOnly = false;
+                 panelWattageInput.style.backgroundColor = '#fff';
+             }
+             clearResultsAndError();
+         });
+         hspInput.addEventListener('input', function() {
+             if (locationHspSelect.value !== 'manual' && locationHspSelect.value !== '') {
+                 locationHspSelect.value = 'manual';
+             }
+             clearResultsAndError();
+         });
+         performanceRatioInput.addEventListener('input', clearResultsAndError);
+
+
+        // Calcular Número de Paneles
+        calculateBtn.addEventListener('click', function() {
+            hideError();
+
+            // Get input values
+            const consumptionValue = parseFloat(consumptionValueInput.value); // CAMBIO
+            const consumptionPeriod = consumptionPeriodSelect.value; // CAMBIO
+            const selectedPanelKey = panelSelect.value;
+            const panelWattage = parseFloat(panelWattageInput.value);
+            const hsp = parseFloat(hspInput.value);
+            const performanceRatio = parseFloat(performanceRatioInput.value) / 100;
+
+            // Input Validation
+            let errorMsg = "";
+            if (isNaN(consumptionValue) || consumptionValue <= 0) { errorMsg = "Ingresa un valor de consumo válido (kWh)."; } // CAMBIO
+            else if (isNaN(panelWattage) || panelWattage <= 0) { errorMsg = "Ingresa o selecciona una potencia de panel válida."; }
+            else if (selectedPanelKey === "" && panelSelect.value !== "otro") { errorMsg = "Selecciona un modelo de panel.";}
+            else if (isNaN(hsp) || hsp <= 0 || hsp > 10) { errorMsg = "Selecciona una ubicación o ingresa un valor de HSP válido (ej: 1-8)."; }
+            else if (isNaN(performanceRatio) || performanceRatio <= 0 || performanceRatio > 1) { errorMsg = "Ingresa un rendimiento válido (ej: 50-95%)."; }
+
+            if (errorMsg) { showError(errorMsg); clearResults(); return; }
+
+            // Calculation
+            // 1. Normalizar consumo a diario
+            let dailyEnergyNeeded = 0;
+            if (consumptionPeriod === 'daily') {
+                dailyEnergyNeeded = consumptionValue;
+            } else if (consumptionPeriod === 'monthly') {
+                dailyEnergyNeeded = consumptionValue / 30;
+            } else { // Debería ser 'daily' o 'monthly' por el select
+                 showError("Selecciona un periodo de consumo válido.");
+                 clearResults(); return;
+            }
+
+            // 2. Energía diaria por panel
+            const panelPowerKw = panelWattage / 1000;
+            const dailyEnergyPerPanel = panelPowerKw * hsp * performanceRatio;
+
+            // 3. Número de paneles
+            let numPanelsNeeded = 0;
+            if (dailyEnergyPerPanel > 0) {
+                 numPanelsNeeded = dailyEnergyNeeded / dailyEnergyPerPanel;
+            } else {
+                 showError("La producción diaria por panel es cero. Revisa los datos.");
+                 clearResults(); return;
+            }
+
+            // 4. Redondear y calcular producción estimada
+            const roundedNumPanels = Math.ceil(numPanelsNeeded);
+            const estimatedTotalPowerKw = (panelWattage * roundedNumPanels) / 1000;
+            const estimatedDailyProd = estimatedTotalPowerKw * hsp * performanceRatio;
+            const estimatedMonthlyProd = estimatedDailyProd * 30;
+
+            // Display Results
+            numPanelsNeededSpan.textContent = roundedNumPanels;
+            estimatedDailyProdSpan.textContent = formatNumber(estimatedDailyProd, 2);
+            estimatedMonthlyProdSpan.textContent = formatNumber(estimatedMonthlyProd, 1);
+
+            // Mostrar especificaciones
+            const selectedPanelData = panelData[selectedPanelKey];
+            if (selectedPanelData) {
+                specVocSpan.textContent = selectedPanelData.voc;
+                specIscSpan.textContent = selectedPanelData.isc;
+                specVmpSpan.textContent = selectedPanelData.vmp;
+                specImpSpan.textContent = selectedPanelData.imp;
+                panelSpecsDiv.classList.remove('hidden');
+            } else {
+                panelSpecsDiv.classList.add('hidden');
+            }
+
+            resultsDiv.classList.remove('hidden');
+        });
+
+        // --- UI Update & Error Handling Functions ---
+        function showError(message) {
+            errorMsgP.textContent = message;
+            errorMsgP.classList.remove('hidden');
+            resultsDiv.classList.remove('hidden');
+            panelSpecsDiv.classList.add('hidden');
+        }
+        function hideError() {
+             errorMsgP.textContent = '';
+             errorMsgP.classList.add('hidden');
+        }
+         function clearResults() {
+             numPanelsNeededSpan.textContent = '--';
+             estimatedDailyProdSpan.textContent = '--';
+             estimatedMonthlyProdSpan.textContent = '--';
+             specVocSpan.textContent = '--';
+             specIscSpan.textContent = '--';
+             specVmpSpan.textContent = '--';
+             specImpSpan.textContent = '--';
+             panelSpecsDiv.classList.add('hidden');
+         }
+         function clearResultsAndError() {
+             hideError();
+             clearResults();
+             resultsDiv.classList.add('hidden');
+         }
+
+    </script>
+
+</body>
+</html>
